@@ -15,6 +15,7 @@ import (
 
 	"github.com/lucas-clemente/quic-go"
 	"github.com/lucas-clemente/quic-go/http3"
+	"github.com/lucas-clemente/quic-go/internal/protocol"
 	"github.com/lucas-clemente/quic-go/internal/testdata"
 	"github.com/lucas-clemente/quic-go/internal/utils"
 	"github.com/lucas-clemente/quic-go/logging"
@@ -25,11 +26,13 @@ func main() {
 	verbose := flag.Bool("v", false, "verbose")
 	quiet := flag.Bool("q", false, "don't print the data")
 	keyLogFile := flag.String("keylog", "", "key log file")
-	insecure := flag.Bool("insecure", false, "skip certificate verification")
+	insecure := flag.Bool("insecure", true, "skip certificate verification")
 	enableQlog := flag.Bool("qlog", false, "output a qlog (in the same directory)")
 	flag.Parse()
-	urls := flag.Args()
 
+	urls := []string{
+		"https://www.stormlin.com/desktop_polymer_v2.js",
+	}
 	logger := utils.DefaultLogger
 
 	if *verbose {
@@ -58,6 +61,7 @@ func main() {
 	var qconf quic.Config
 	if *enableQlog {
 		qconf.Tracer = qlog.NewTracer(func(_ logging.Perspective, connID []byte) io.WriteCloser {
+			qconf.Versions = []protocol.VersionNumber{protocol.VersionDraft29}
 			filename := fmt.Sprintf("client_%x.qlog", connID)
 			f, err := os.Create(filename)
 			if err != nil {
